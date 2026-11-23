@@ -1,0 +1,353 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KIT HUB | Daily Control Center</title>
+<style>
+:root {
+  --navy:#183653;
+  --blue:#32648d;
+  --bg:#f3f6fa;
+  --white:#ffffff;
+  --text:#263747;
+  --muted:#8493a3;
+  --green:#26865b;
+  --line:#e7edf2;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,"Microsoft JhengHei",sans-serif;
+}
+header {
+  background:var(--navy);
+  color:white;
+  padding:22px max(5%,calc((100% - 1100px)/2));
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.brand { font-size:23px;font-weight:800;letter-spacing:2px; }
+.brand small { display:block;font-size:10px;letter-spacing:3px;color:#b9ccdc;margin-top:5px; }
+.date { font-size:13px;color:#d8e4ef; }
+main { max-width:1100px;margin:30px auto;padding:0 20px; }
+.greeting { margin-bottom:22px; }
+.greeting h1 { font-size:27px;margin:0 0 8px; }
+.greeting p { color:var(--muted);margin:0;font-size:14px; }
+.stats {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:15px;
+  margin-bottom:22px;
+}
+.card {
+  background:white;
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:20px;
+  box-shadow:0 3px 12px #1d35570a;
+}
+.stat-label { color:var(--muted);font-size:13px; }
+.stat-number { font-size:29px;font-weight:800;margin-top:9px; }
+.stat-number small { font-size:14px;color:var(--muted); }
+.progress {
+  height:8px;background:#e9eef3;border-radius:10px;
+  overflow:hidden;margin-top:14px;
+}
+.progress-bar {
+  height:100%;width:0;background:var(--green);
+  transition:width .25s;
+}
+.section-title {
+  display:flex;justify-content:space-between;
+  align-items:center;margin-bottom:14px;
+}
+.section-title h2 { font-size:18px;margin:0; }
+.task-list { display:flex;flex-direction:column;gap:9px; }
+.task {
+  display:flex;align-items:center;gap:13px;
+  padding:15px;background:white;border:1px solid var(--line);
+  border-radius:10px;
+}
+.task input { width:19px;height:19px;accent-color:var(--green); }
+.task-content { flex:1;min-width:0; }
+.task-name { font-size:14px;font-weight:700; }
+.task-category { font-size:11px;color:var(--muted);margin-top:5px; }
+.task.done .task-name {
+  text-decoration:line-through;color:#9aa6b2;
+}
+.delete {
+  border:0;background:transparent;color:#a0aab4;
+  cursor:pointer;font-size:19px;padding:5px;
+}
+.delete:hover { color:#d34d4d; }
+.add-area {
+  display:flex;gap:9px;margin-top:15px;
+}
+input[type="text"],select {
+  border:1px solid #dce4ec;border-radius:8px;
+  padding:12px;font-size:14px;background:white;
+  min-width:0;
+}
+#newTask { flex:1; }
+button {
+  cursor:pointer;border:0;border-radius:8px;
+  padding:11px 17px;font-size:13px;font-weight:700;
+}
+.primary { background:var(--navy);color:white; }
+.primary:hover { background:var(--blue); }
+.secondary { background:#e9eff5;color:var(--navy); }
+.bottom-grid {
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:15px;margin-top:22px;
+}
+.info-title { font-weight:700;margin-bottom:10px; }
+.info-text { color:var(--muted);font-size:13px;line-height:1.8; }
+footer {
+  text-align:center;color:#9aa6b2;
+  font-size:11px;padding:30px 15px;
+}
+@media(max-width:650px) {
+  .stats { grid-template-columns:1fr; }
+  .bottom-grid { grid-template-columns:1fr; }
+  header { padding:18px 20px; }
+  main { margin:22px auto; }
+  .date { font-size:11px; }
+  .add-area { flex-wrap:wrap; }
+  #newTask { flex-basis:100%; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    KIT HUB
+    <small>DAILY CONTROL CENTER</small>
+  </div>
+  <div class="date" id="today"></div>
+</header>
+
+<main>
+  <section class="greeting">
+    <h1>Good Morning!</h1>
+    <p>今天也一步一步完成重要的事情。</p>
+  </section>
+
+  <section class="stats">
+    <div class="card">
+      <div class="stat-label">今日任務</div>
+      <div class="stat-number" id="total">0</div>
+    </div>
+    <div class="card">
+      <div class="stat-label">已完成</div>
+      <div class="stat-number" id="completed">0</div>
+    </div>
+    <div class="card">
+      <div class="stat-label">今日完成率</div>
+      <div class="stat-number"><span id="percent">0</span><small>%</small></div>
+      <div class="progress">
+        <div class="progress-bar" id="bar"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-title">
+      <h2>☑ 今日工作清單</h2>
+      <span class="stat-label" id="dateLabel"></span>
+    </div>
+
+    <div class="task-list" id="taskList"></div>
+
+    <div class="add-area">
+      <input id="newTask" type="text" placeholder="輸入新的待辦事項...">
+      <select id="category">
+        <option>工作</option>
+        <option>學習</option>
+        <option>生活</option>
+        <option>財務</option>
+        <option>其他</option>
+      </select>
+      <button class="primary" id="addBtn">＋ 新增任務</button>
+    </div>
+  </section>
+
+  <section class="bottom-grid">
+    <div class="card">
+      <div class="info-title">📌 今日提醒</div>
+      <div class="info-text">
+        • 檢查重要郵件與待回覆事項<br>
+        • 確認採購交期及供應商異動<br>
+        • 記錄今天的學習與運動<br>
+        • 確認每日支出
+      </div>
+    </div>
+    <div class="card">
+      <div class="info-title">🚀 KIT HUB 開發進度</div>
+      <div class="info-text">
+        V1.0：每日任務管理<br>
+        V2.0：行事曆與提醒<br>
+        V3.0：Excel 自動化<br>
+        V4.0：Email 與採購管理<br>
+        V5.0：AI 自動化助理
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  KIT HUB · Personal Productivity System<br>
+  個人資料儲存在目前瀏覽器，不會自動上傳 GitHub。
+</footer>
+
+<script>
+const STORAGE_KEY = "kit_hub_tasks_v1";
+const CHECK_KEY = "kit_hub_checks_v1";
+
+const defaultTasks = [
+  {id:"w1",name:"檢查工作郵件",category:"工作"},
+  {id:"w2",name:"SAP / 採購進度追蹤",category:"工作"},
+  {id:"w3",name:"Excel 待處理事項",category:"工作"},
+  {id:"s1",name:"TOEIC 英文練習",category:"學習"},
+  {id:"l1",name:"每日運動打卡",category:"生活"},
+  {id:"f1",name:"每日財務紀錄",category:"財務"}
+];
+
+let tasks = loadTasks();
+let checks = loadChecks();
+
+function loadTasks() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : defaultTasks;
+  } catch {
+    return defaultTasks;
+  }
+}
+
+function loadChecks() {
+  try {
+    return JSON.parse(localStorage.getItem(CHECK_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  localStorage.setItem(CHECK_KEY, JSON.stringify(checks));
+}
+
+function todayKey() {
+  const d = new Date();
+  return [
+    d.getFullYear(),
+    String(d.getMonth()+1).padStart(2,"0"),
+    String(d.getDate()).padStart(2,"0")
+  ].join("-");
+}
+
+function checked(id) {
+  return !!checks[todayKey()]?.[id];
+}
+
+function render() {
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
+
+  tasks.forEach(task => {
+    const isDone = checked(task.id);
+    const row = document.createElement("div");
+    row.className = "task" + (isDone ? " done" : "");
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = isDone;
+    checkbox.setAttribute("aria-label", "完成 " + task.name);
+    checkbox.addEventListener("change", () => {
+      if (!checks[todayKey()]) checks[todayKey()] = {};
+      checks[todayKey()][task.id] = checkbox.checked;
+      save();
+      render();
+    });
+
+    const content = document.createElement("div");
+    content.className = "task-content";
+
+    const name = document.createElement("div");
+    name.className = "task-name";
+    name.textContent = task.name;
+
+    const category = document.createElement("div");
+    category.className = "task-category";
+    category.textContent = task.category;
+
+    content.append(name, category);
+
+    const del = document.createElement("button");
+    del.className = "delete";
+    del.textContent = "×";
+    del.title = "刪除任務";
+    del.setAttribute("aria-label", "刪除 " + task.name);
+    del.addEventListener("click", () => {
+      if (!confirm("確定刪除這項任務？")) return;
+      tasks = tasks.filter(t => t.id !== task.id);
+      save();
+      render();
+    });
+
+    row.append(checkbox, content, del);
+    list.appendChild(row);
+  });
+
+  const total = tasks.length;
+  const completed = tasks.filter(t => checked(t.id)).length;
+  const percent = total ? Math.round(completed / total * 100) : 0;
+
+  document.getElementById("total").textContent = total;
+  document.getElementById("completed").textContent = completed;
+  document.getElementById("percent").textContent = percent;
+  document.getElementById("bar").style.width = percent + "%";
+}
+
+function addTask() {
+  const input = document.getElementById("newTask");
+  const name = input.value.trim();
+  if (!name) {
+    alert("請先輸入任務名稱！");
+    input.focus();
+    return;
+  }
+
+  tasks.push({
+    id: "task_" + Date.now() + "_" + Math.random().toString(36).slice(2,8),
+    name,
+    category: document.getElementById("category").value
+  });
+
+  save();
+  input.value = "";
+  render();
+  input.focus();
+}
+
+document.getElementById("addBtn").addEventListener("click", addTask);
+document.getElementById("newTask").addEventListener("keydown", e => {
+  if (e.key === "Enter") addTask();
+});
+
+const now = new Date();
+document.getElementById("today").textContent =
+  now.toLocaleDateString("zh-TW", {
+    year:"numeric",month:"long",day:"numeric",weekday:"long"
+  });
+document.getElementById("dateLabel").textContent = todayKey();
+
+render();
+</script>
+</body>
+</html>
